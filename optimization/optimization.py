@@ -46,7 +46,6 @@ class Optimization():
             f"  bounds     = {self.bounds}\n"
             f"  x0         = {self.x0}\n"
             f"  y0         = {self.y0}\n"
-            f"  run_opt    = {self.run_opt}\n"
             f"\n"
             f"  iters      = {self.iters}\n"
             f"  best_vec   = {self.best_vec}\n"
