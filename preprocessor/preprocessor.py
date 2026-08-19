@@ -43,6 +43,18 @@ class PreProcessor():
         self.bc = None
         self.bcstate = 0
 
+    def __str__(self):
+        return (
+            f"PreProcessor(name='{self.name}', "
+            f"outdir='{self.outdir}', "
+            f"usrfile='{self.usrfile}', "
+            f"parfile='{self.parfile}', "
+            f"sizefile='{self.sizefile}', "
+            f"msh={self.msh}, "
+            f"re2={self.re2}, "
+            f"ma2={self.ma2}, "
+            f"bcstate={self.bcstate})"
+        )
 
     def generate_mesh(self, k, eta, Lx, Ly, Lz, Lin=15, N=None, Nin=None, Nx=None, Ny=None, Nz=None, show=False):
         outfile = (self.outdir / f"{self.name}_{k}_{eta}").with_suffix(".msh")
