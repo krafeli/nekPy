@@ -35,6 +35,16 @@ class Optimization():
         self.best_obj = None
         self.best_it = None
 
+        if x0 is not None and y0 is not None:
+            if len(x0) != len(y0): raise ValueError("x0 and y0 must have the same length.")
+            self.all_vecs = [ np.asarray(x, dtype=float) for x in x0]
+            self.all_objs = [float(y) for y in y0]
+            self.iters = len(self.all_objs)
+            idx = int(np.argmin(self.all_objs))
+            self.best_it = idx
+            self.best_vec = self.all_vecs[idx]
+            self.best_obj = self.all_objs[idx]
+
         self.result = None
 
         # Algorithm-specific options
@@ -108,7 +118,6 @@ class Optimization():
         if self.objective is None: raise ValueError("No objective function has been set.")
         start = time.perf_counter()
         J = self.objective(x, self)
-
         elapsed = (time.perf_counter() - start) / 3600.0
         self.iter_times.append(elapsed)
         self.total_time += elapsed
@@ -118,7 +127,7 @@ class Optimization():
 
     def run(self):
         if self.objective is None: raise ValueError("No objective function has been set.")
-        self.start_time = datetime.datetime.now().isoformat(timespec="seconds",sep=" ")
+        if self.start_time is None: self.start_time = datetime.datetime.now().isoformat(timespec="seconds",sep=" ")
         self.save()
         if self.algorithm == "bayesian": self.result = self._run_bayesian()
         elif self.algorithm == "scipy": self.result = self._run_scipy()
