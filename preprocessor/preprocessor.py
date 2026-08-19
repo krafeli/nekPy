@@ -7,7 +7,7 @@ from nekPy.utils.bash import copy, mkdir
 
 class PreProcessor():
 
-    def __init__(self, outdir, usr, par, size, name=None, msh=None, re2=None, ma2=None, additional_files=None, save_originals=True):
+    def __init__(self, outdir, usr, par, size, name=None, msh=None, re2=None, ma2=None, additional_files=None, save_originals=False):
 
         self.outdir = Path(outdir)
         mkdir(outdir)
