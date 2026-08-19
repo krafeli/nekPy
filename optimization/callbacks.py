@@ -1,7 +1,7 @@
 import numpy as np
 from skopt.callbacks import *
 from skopt.utils import expected_minimum
-from utils import write_json
+from nekPy.utils.io import write_json
 
 class ExpectedMinimumStopper(EarlyStopper):
 
