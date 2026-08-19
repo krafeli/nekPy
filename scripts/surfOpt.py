@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 
 from nekPy.utils.misc import logger
-from nekPy.utils.bash import run_command
+from nekPy.utils.bash import run_command, mkdir
 from nekPy.preprocessor import PreProcessor, BoundaryCondition
 from nekPy.launcher import Launcher
 from nekPy.optimization import Optimization
@@ -11,10 +11,11 @@ from nekPy.optimization.objectives import misfit
 
 
 config = Path("/home/felix.kranz/thermoSurf/3d/opt/config")
-out = Path("/home/felix.kranz/thermoSurf/3d/opt/out/test")
+out = Path("/home/felix.kranz/thermoSurf/3d/opt/out/test_opt")
 blfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Re1e6.pkl")
 obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek800_xc005.f00001")
 
+mkdir(out)
 log = logger(out)
 
 opt = Optimization(out, bounds=[(200, 2000)], neval=25)
@@ -34,7 +35,7 @@ def objective(x, opt):
 
     # launch the sim
     launcher = Launcher(outit)
-    launcher.submit(job_name=f'Rek{x:.0f}_{xloc:.2f}', slurm_script=config/'run.slurm')
+    launcher.submit(slurm_script=config/'run.slurm')
 
     # check if it finished
     while True:
