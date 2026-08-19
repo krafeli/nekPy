@@ -35,7 +35,7 @@ class Optimization():
         self.best_obj = None
         self.best_it = None
 
-        if x0 is not None and y0 is not None:
+        if x0 is not None and y0 is not None and self.algorithm == "bayesian":
             if len(x0) != len(y0): raise ValueError("x0 and y0 must have the same length.")
             self.all_vecs = [ np.asarray(x, dtype=float) for x in x0]
             self.all_objs = [float(y) for y in y0]
@@ -132,6 +132,7 @@ class Optimization():
         if self.algorithm == "bayesian": self.result = self._run_bayesian()
         elif self.algorithm == "scipy": self.result = self._run_scipy()
         else: raise ValueError(f"Unknown optimization algorithm: {self.algorithm}")
+        self.save()
         return self.result
 
     def _run_bayesian(self):
@@ -146,6 +147,8 @@ class Optimization():
         disp = self.options.get("disp", True)
         acq_func = self.options.get("acq_func", "EI")
         initial_point_generator = self.options.get("initial_point_generator", "lhs")
+
+        if neval < nstarts: raise ValueError(f"neval ({neval}) must be >= nstarts ({nstarts}).")
 
         callbacks = [CheckpointSaver(self.outdir / "checkpoint.pkl", store_objective=False),
                      ExpectedMinimumStopper(rel_tol=tol, save=self.outdir, patience=patience)]
