@@ -1,87 +1,59 @@
-import datetime
-
+import time, datetime
 import numpy as np
-
 from pathlib import Path
 
-from skopt import gp_minimize
-from skopt.callbacks import CheckpointSaver
-from utils import run_command, print, logger, write_json, copy, read_par, write_par
-from nekPy.optimization.custom_callbacks import ExpectedMinimumStopper
-from inflow import write_inflow
+from nekPy.utils.misc import logger
+from nekPy.utils.bash import run_command
+from nekPy.preprocessor import PreProcessor, BoundaryCondition
+from nekPy.launcher import Launcher
+from nekPy.optimization import Optimization
+from nekPy.optimization.objectives import misfit
 
-np.random.seed(69)
 
-base = Path('/home/felix/run/3d/opt/base')
-out = Path('/home/felix/run/3d/opt/test')
-bl = Path('/home/felix/run/2d/DU95W180/glob/Re1e6/bl/bl.pkl')
+config = Path("/home/felix.kranz/thermoSurf/3d/opt/config")
+out = Path("/home/felix.kranz/thermoSurf/3d/opt/out/test")
+blfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Re1e6.pkl")
+obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek800_xc005.f00001")
 
-opti_params = {'J': 'shear',
-               'bounds': [(200, 2000)],
-               'x0': [800],
-               'y0': None,
-               'opts': {
-                   'disp': True,
-                   'neval': 20,
-                   'nstarts': 3,
-                   'tol': 1e-2,
-                        },
-               'run_expected': True
-               }
+log = logger(out)
 
-info = {'Nfeval': 0, 'all_vecs': [], 'J': []}
+opt = Optimization(out, bounds=[(200, 2000)], neval=25)
 
-#
-out.mkdir(parents=True, exist_ok=True)
-# logging
-logger(out)
-write_json(opti_params, out/'opti_params.json')
-
-# get the base simulation
-copy(base, out / base.name)
-
-def objective(x):
-    global opti_params, info
-
+def objective(x, opt):
     x = np.asarray(x)
+    Rek = float(x[0])
+    xloc = float(x[1]) if len(x) > 1 else 0.05
     print(f"Considering new params: {x}")
 
-    # setup new sim
-    ################
-    it = info['Nfeval']
-    outit = out / str(it)
-    copy(base, outit)
-    # write par file
-    parfile = list(outit.glob('*.par'))[0]
-    cfg = read_par(parfile)
-    cfg['VELOCITY']['viscosity'] = -float(x[0])
-    write_par(cfg, parfile)
+    # Setup new simulation
+    outit = opt.outdir / str(opt.iters)
+    pre = PreProcessor(outit,  usr=config/'loc3.usr', par=config/'loc3.par', size=config/'SIZE',
+                       re2=config/'loc3.re2', ma2=config/'loc3.ma2')
+    pre.parameters.set('VELOCITY', 'viscosity', -Rek)
+    pre.generate_bc(blfile, mode='blade', loc=xloc, Lin=15.)
 
-    # generate BCs
-    write_inflow(float(x[0]), bl, outit)
+    # launch the sim
+    launcher = Launcher(outit)
+    launcher.submit(job_name=f'Rek{x:.0f}_{xloc:.2f}', slurm_script=config/'run.slurm')
 
-    # start the simulation
-    name = parfile.name.split('.')[0]
-    run_command(f'echo "{name}\n{str(outit)}" > SESSION.NAME', outit)
-    run_command('mpirun -np 8 ./nek5000 > log.txt', outit)
+    # check if it finished
+    while True:
+        if (outit / 'done.flag').exists(): break
+        time.sleep(10)
+    print("Simulation done. Postprocessing")
 
-    # postproc
-    avgfile = list(outit.glob('avg*.f*'))[0]
+    sim_res = list(outit.glob('avg*.f*'))[0]
+    J = misfit(sim_res, obsfile, bounds=[.5, 50., -4., 4.], verbose=False)
 
+    # cleanup
+    run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag', outit)
+    return J
 
-    info['Nfeval'] += 1
-    return -float(x[0])
+opt.set_objective(objective)
 
-
+print(datetime.datetime.now().isoformat(timespec='seconds', sep=' '))
 print("Running optimization...")
-print(datetime.datetime.now().isoformat(timespec='seconds', sep=' '))
-res = gp_minimize(objective,
-                  opti_params['bounds'],
-                  x0=opti_params['x0'], y0=opti_params['y0'],
-                  n_initial_points=opti_params['opts']['nstarts'],
-                  initial_point_generator='lhs',
-                  verbose=opti_params['opts']['disp'],
-                  acq_func='EI',
-                  callback=[CheckpointSaver(out / 'checkpoint.pkl', store_objective=False),
-                            ExpectedMinimumStopper(rel_tol=opti_params['opts']['tol'], save=out)],)
-print(datetime.datetime.now().isoformat(timespec='seconds', sep=' '))
+opt.run()
+x_opt, J_opt = opt.expected_minimum()
+print("Expected Minimum:", x_opt, J_opt)
+

@@ -1,3 +1,5 @@
+import datetime, time
+
 from pathlib import Path
 import numpy as np
 from scipy.optimize import minimize
@@ -14,7 +16,7 @@ class Optimization():
 
     def __init__(self, outdir, algorithm='bayesian', bounds=None, x0=None, y0=None, **kwargs):
 
-        self.outdir = outdir
+        self.outdir = Path(outdir)
         mkdir(self.outdir)
 
         self.algorithm = algorithm.lower()
@@ -38,21 +40,35 @@ class Optimization():
         # Algorithm-specific options
         self.options = kwargs
 
+        self.total_time = 0.0
+        self.iter_times = []
+        self.start_time = None
+
     def __str__(self):
         return (
             f"Optimization:\n"
-            f"  outdir     = {self.outdir}\n"
-            f"  algorithm  = {self.algorithm}\n"
-            f"  bounds     = {self.bounds}\n"
-            f"  x0         = {self.x0}\n"
-            f"  y0         = {self.y0}\n"
+            f"  outdir      = {self.outdir}\n"
+            f"  algorithm   = {self.algorithm}\n"
+            f"  objective   = {self.objective}\n"
             f"\n"
-            f"  iters      = {self.iters}\n"
-            f"  best_vec   = {self.best_vec}\n"
-            f"  best_obj   = {self.best_obj}\n"
-            f"  best_it    = {self.best_it}\n"
+            f"  bounds      = {self.bounds}\n"
+            f"  x0          = {self.x0}\n"
+            f"  y0          = {self.y0}\n"
             f"\n"
-            f"  options    = {self.options}"
+            f"  iters       = {self.iters}\n"
+            f"  all_vecs    = {self.all_vecs}\n"
+            f"  all_objs    = {self.all_objs}\n"
+            f"\n"
+            f"  best_vec    = {self.best_vec}\n"
+            f"  best_obj    = {self.best_obj}\n"
+            f"  best_it     = {self.best_it}\n"
+            f"\n"
+            f"  result      = {self.result}\n"
+            f"  options     = {self.options}"
+            f"\n"
+            f"  start_time  = {self.start_time}\n"
+            f"  total_time  = {self.total_time:.3f} h\n"
+            f"  iter_times  = {self.iter_times}\n"
         )
 
     def set_objective(self, objective):
@@ -81,17 +97,29 @@ class Optimization():
                         "J": self.best_obj
                         },
             "options": self.options,
+            "time": {"start": self.start_time,
+                     "total_hours": self.total_time,
+                     "iteration_hours": self.iter_times,
+                    },
         }
         write_json(info,self.outdir / "info.json")
 
     def _objective(self, x):
         if self.objective is None: raise ValueError("No objective function has been set.")
+        start = time.perf_counter()
         J = self.objective(x, self)
+
+        elapsed = (time.perf_counter() - start) / 3600.0
+        self.iter_times.append(elapsed)
+        self.total_time += elapsed
+
         self.update(x, J)
         return float(J)
 
     def run(self):
         if self.objective is None: raise ValueError("No objective function has been set.")
+        self.start_time = datetime.datetime.now().isoformat(timespec="seconds",sep=" ")
+        self.save()
         if self.algorithm == "bayesian": self.result = self._run_bayesian()
         elif self.algorithm == "scipy": self.result = self._run_scipy()
         else: raise ValueError(f"Unknown optimization algorithm: {self.algorithm}")
