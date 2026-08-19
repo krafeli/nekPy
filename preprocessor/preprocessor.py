@@ -4,10 +4,11 @@ from nekPy.preprocessor.bc import BoundaryCondition
 from nekPy.utils.nektools import ParFile, SizeFile, msh2nek
 from nekPy.utils.bash import copy, mkdir
 
+
 class PreProcessor():
 
     def __init__(self, outdir, usr, par, size, name=None, msh=None, re2=None, ma2=None, additional_files=None):
-        
+
         self.outdir = Path(outdir)
         mkdir(outdir)
 
@@ -18,7 +19,7 @@ class PreProcessor():
 
         usr = Path(usr)
         par = Path(par)
-        size= Path(size)
+        size = Path(size)
 
         self.usr_origin = usr
         self.par_origin = par
@@ -26,19 +27,38 @@ class PreProcessor():
 
         self.name = name if name else usr.stem
 
-        dusr = copy(usr,  (self.outdir / self.name).with_suffix(".usr"))
-        dpar = copy(par,  (self.outdir / self.name).with_suffix(".par"))
+        dusr = copy(usr, (self.outdir / self.name).with_suffix(".usr"))
+        dpar = copy(par, (self.outdir / self.name).with_suffix(".par"))
         dsize = copy(size, (self.outdir / "SIZE").with_suffix(""))
 
         self.usrfile = dusr
         self.parfile = dpar
         self.sizefile = dsize
-    
+
         self.parameters = ParFile(dpar)
-        self.size = SizeFile(dsize)        
-        self.msh = Mesh(mshfile=msh) if msh else None
-        self.re2 = Path(re2) if re2 else None
-        self.ma2 = Path(ma2) if ma2 else None
+        self.size = SizeFile(dsize)
+
+        self.msh_origin = Path(msh) if msh else None
+        self.re2_origin = Path(re2) if re2 else None
+        self.ma2_origin = Path(ma2) if ma2 else None
+
+        if msh:
+            dmsh = copy(msh, (self.outdir / self.name).with_suffix(".msh"))
+            self.msh = Mesh(mshfile=dmsh)
+        else:
+            self.msh = None
+
+        if re2:
+            dre2 = copy(re2, (self.outdir / self.name).with_suffix(".re2"))
+            self.re2 = dre2
+        else:
+            self.re2 = None
+
+        if ma2:
+            dma2 = copy(ma2, (self.outdir / self.name).with_suffix(".ma2"))
+            self.ma2 = dma2
+        else:
+            self.ma2 = None
 
         self.bc = None
         self.bcstate = 0
@@ -46,16 +66,25 @@ class PreProcessor():
     def __str__(self):
         return (
             f"PreProcessor:\n"
-            f"  name      = {self.name}\n"
-            f"  outdir    = {self.outdir}\n"
-            f"  usrfile   = {self.usrfile}\n"
-            f"  parfile   = {self.parfile}\n"
-            f"  sizefile  = {self.sizefile}\n"
-            f"  msh       = {self.msh}\n"
-            f"  re2       = {self.re2}\n"
-            f"  ma2       = {self.ma2}\n"
-            f"  bcstate   = {self.bcstate}\n"
-            f"  bc        = {self.bc}"
+            f"  name        = {self.name}\n"
+            f"  outdir      = {self.outdir}\n"
+            f"\n"
+            f"  usr_origin  = {self.usr_origin}\n"
+            f"  par_origin  = {self.par_origin}\n"
+            f"  size_origin = {self.size_origin}\n"
+            f"  msh_origin  = {self.msh_origin}\n"
+            f"  re2_origin  = {self.re2_origin}\n"
+            f"  ma2_origin  = {self.ma2_origin}\n"
+            f"\n"
+            f"  usrfile     = {self.usrfile}\n"
+            f"  parfile     = {self.parfile}\n"
+            f"  sizefile    = {self.sizefile}\n"
+            f"  msh         = {self.msh}\n"
+            f"  re2         = {self.re2}\n"
+            f"  ma2         = {self.ma2}\n"
+            f"\n"
+            f"  bcstate     = {self.bcstate}\n"
+            f"  bc          = {self.bc}"
         )
 
     def generate_mesh(self, k, eta, Lx, Ly, Lz, Lin=15, N=None, Nin=None, Nx=None, Ny=None, Nz=None, show=False):
@@ -64,9 +93,11 @@ class PreProcessor():
         self.msh.generate(show=show)
 
     def msh2nek(self, **kwargs):
-        if self.msh.mshfile is None:
-            raise ValueError("No msh file provided")
+        if self.msh is None:
+            raise ValueError("No mesh provided")
         msh2nek(self.outdir, self.msh.mshfile.stem, self.name, **kwargs)
+        self.re2 = (self.outdir / self.name).with_suffix(".re2")
+        self.ma2 = (self.outdir / self.name).with_suffix(".ma2")
 
     def generate_bc(self, blfile, mode, loc, **kwargs):
         if self.bcstate != 0:
@@ -75,11 +106,3 @@ class PreProcessor():
         self.bc = BoundaryCondition(blfile, mode, loc, Rek, self.outdir, **kwargs)
         self.bc.generate()
         self.bcstate = 1
-
-
-
-        
-    
-    
-    
-        

@@ -40,6 +40,28 @@ class Launcher():
         self.job_name = None
         self.jobid = None
 
+    def __str__(self):
+        return (
+            f"Launcher:\n"
+            f"  name       = {self.name}\n"
+            f"  dir        = {self.dir}\n"
+            f"\n"
+            f"  usr_file   = {self.usr_file}\n"
+            f"  par_file   = {self.par_file}\n"
+            f"  size_file  = {self.size_file}\n"
+            f"  re2_file   = {self.re2_file}\n"
+            f"  ma2_file   = {self.ma2_file}\n"
+            f"  run_file   = {self.run_file}\n"
+            f"\n"
+            f"  time       = {self.time}\n"
+            f"  nodes      = {self.nodes}\n"
+            f"  cores      = {self.cores}\n"
+            f"  partition  = {self.partition}\n"
+            f"  account    = {self.account}\n"
+            f"  job_name   = {self.job_name}\n"
+            f"  jobid      = {self.jobid}"
+        )
+
     def clean(self, cleanall=False):
         if cleanall:
             cleandir(dir=self.dir)
@@ -84,7 +106,7 @@ class Launcher():
         self.save_config()
         run_command([f"mpirun -np {ncores} ./nek5000 > log.txt" ], dir=self.dir)
 
-    def submit(self, make=True, slurm_script=None, time=None, nodes=None, partition=None, account=None, job_name=None):
+    def submit(self, makenek=True, slurm_script=None, time=None, nodes=None, partition=None, account=None, job_name=None):
 
         self.time = time
         self.nodes = nodes
@@ -92,7 +114,7 @@ class Launcher():
         self.account = account
         self.job_name = job_name
 
-        if make:
+        if makenek:
             self.makenek(cleanall=False)
 
         if not slurm_script:
@@ -118,7 +140,7 @@ class Launcher():
         if result is None:
             raise RuntimeError("Failed to submit Slurm job")
 
-        self.jobid = int(result.stdout.split()[-1])
+        self.jobid = int(result.split()[-1])
 
         self.save_config()
 
