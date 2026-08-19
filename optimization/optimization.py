@@ -34,7 +34,6 @@ class Optimization():
         self.best_it = None
 
         self.result = None
-        self.run_opt = run_opt
 
         # Algorithm-specific options
         self.options = kwargs
@@ -126,7 +125,7 @@ class Optimization():
             acq_func=acq_func,
             verbose=disp,
             callback=callbacks)
-        
+
         dump(result, str(self.outdir / "optres.pkl"), store_objective=False)
         return result
 
