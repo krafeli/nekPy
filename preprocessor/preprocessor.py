@@ -61,13 +61,17 @@ class PreProcessor():
             self.ma2 = None
 
         if save_originals:
-            mkdir(self.outdir / 'original_config')
-            copy(self.usr_origin, self.outdir / 'original_config')
-            copy(self.par_origin, self.outdir / 'original_config')
-            copy(self.size_origin, self.outdir / 'original_config')
-            if self.msh_origin: copy(self.msh_origin, self.outdir / 'original_config')
-            if self.re2_origin: copy(self.re2_origin, self.outdir / 'original_config')
-            if self.ma2_origin: copy(self.ma2_origin, self.outdir / 'original_config')
+            original_dir = self.outdir / "original_config"
+            mkdir(original_dir)
+            copy(self.usr_origin, original_dir / self.usr_origin.name)
+            copy(self.par_origin, original_dir / self.par_origin.name)
+            copy(self.size_origin, original_dir / self.size_origin.name)
+            if self.msh_origin:
+                copy(self.msh_origin, original_dir / self.msh_origin.name)
+            if self.re2_origin:
+                copy(self.re2_origin, original_dir / self.re2_origin.name)
+            if self.ma2_origin:
+                copy(self.ma2_origin, original_dir / self.ma2_origin.name)
 
 
         self.bc = None
