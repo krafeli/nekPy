@@ -45,15 +45,17 @@ class PreProcessor():
 
     def __str__(self):
         return (
-            f"PreProcessor(name='{self.name}', "
-            f"outdir='{self.outdir}', "
-            f"usrfile='{self.usrfile}', "
-            f"parfile='{self.parfile}', "
-            f"sizefile='{self.sizefile}', "
-            f"msh={self.msh}, "
-            f"re2={self.re2}, "
-            f"ma2={self.ma2}, "
-            f"bcstate={self.bcstate})"
+            f"PreProcessor:\n"
+            f"  name      = {self.name}\n"
+            f"  outdir    = {self.outdir}\n"
+            f"  usrfile   = {self.usrfile}\n"
+            f"  parfile   = {self.parfile}\n"
+            f"  sizefile  = {self.sizefile}\n"
+            f"  msh       = {self.msh}\n"
+            f"  re2       = {self.re2}\n"
+            f"  ma2       = {self.ma2}\n"
+            f"  bcstate   = {self.bcstate}\n"
+            f"  bc        = {self.bc}"
         )
 
     def generate_mesh(self, k, eta, Lx, Ly, Lz, Lin=15, N=None, Nin=None, Nx=None, Ny=None, Nz=None, show=False):
