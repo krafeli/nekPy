@@ -7,7 +7,7 @@ from nekPy.utils.bash import copy, mkdir
 
 class PreProcessor():
 
-    def __init__(self, outdir, usr, par, size, name=None, msh=None, re2=None, ma2=None, additional_files=None):
+    def __init__(self, outdir, usr, par, size, name=None, msh=None, re2=None, ma2=None, additional_files=None, save_originals=True):
 
         self.outdir = Path(outdir)
         mkdir(outdir)
@@ -59,6 +59,16 @@ class PreProcessor():
             self.ma2 = dma2
         else:
             self.ma2 = None
+
+        if save_originals:
+            mkdir(self.outdir / 'original_config')
+            copy(self.usr_origin, self.outdir / 'original_config')
+            copy(self.par_origin, self.outdir / 'original_config')
+            copy(self.size_origin, self.outdir / 'original_config')
+            if self.msh_origin: copy(self.msh_origin, self.outdir / 'original_config')
+            if self.re2_origin: copy(self.re2_origin, self.outdir / 'original_config')
+            if self.ma2_origin: copy(self.ma2_origin, self.outdir / 'original_config')
+
 
         self.bc = None
         self.bcstate = 0
