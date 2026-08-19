@@ -1,0 +1,35 @@
+[GENERAL]
+startFrom = 0.0
+stopAt = endTime
+endTime = 1800.0
+variableDT = yes
+targetCFL = 0.5
+initialDT = 1e-3
+writeControl = runTime
+writeInterval = 50.0
+
+userParam01 = 1             # enable (1) / disable (-1) averaging
+userParam02 = 500.0         # start time to compute stats in L/U
+userParam03 = 5.0           # interval check convergence criteria
+userParam04 = 1e-3          # convergence threshold for mean velocity
+userParam05 = 1e-2          # convergence threshold for reynolds stresses
+userParam06 = 550.0         # minimal runtime
+userParam07 = 10            # required patience for convergence 
+userParam11 = 1.0
+
+[PROBLEMTYPE]
+equation = incompNS
+
+[VELOCITY]
+residualTol = 1e-7
+density = 1.0
+viscosity = 500
+writeToFieldFile = yes
+
+[PRESSURE]
+residualTol = 1e-4
+residualProj = no
+writeToFieldFile = yes
+
+[SCALAR01]
+solver = none
