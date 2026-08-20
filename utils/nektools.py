@@ -24,11 +24,11 @@ def msh2nek(dir, mshfile, outname, dim=3, periodic_pairs=[], tol=0.001):
 
 
 def cleannek(dir):
-    run_command(["rm -r obj *.nek5000"], dir=dir)
+    run_command(["rm -rf obj *.nek5000"], dir=dir)
 
 
 def cleandir(dir):
-    run_command(["rm -r out obj *.f* *.txt *.nek5000"], dir=dir)
+    run_command(["rm -rf out obj *.f* *.txt *.nek5000"], dir=dir)
 
 
 def makenek(dir, name):

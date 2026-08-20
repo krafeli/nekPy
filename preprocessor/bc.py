@@ -111,7 +111,7 @@ class BoundaryCondition:
 
         return s + "\n)"
 
-    def generate(self, save_config=True):
+    def generate(self, save_config=True, verbose=True):
 
         bl = self.bl
         loc = self.xloc
@@ -152,15 +152,6 @@ class BoundaryCondition:
             d_c = d_itp(loc)
             d99_c = float(d99_itp(loc))
 
-            print("---------------------------------INPUTS------------------------------------")
-            print(f"Re_inf   = {self.Rei:.0e}")
-            print(f"xc       = {loc:.6f}")
-            print(f"sc       = {self.sloc:.6f}")
-            print(f"Uinf_xc  = {self.Ui:.6f}")
-            print(f"Rek_des  = {Rek_des:.0f}")
-
-            print("--------------------------BLADE BOUNDARY LAYER------------------------------")
-
             dq = np.append(0.0, np.geomspace(1e-6, 5e1, 9999))
             utc_prof_itp = interp1d(d_c, ut_c, bounds_error=False, fill_value=(ut_c[0], ut_c[-1]))
             utq = utc_prof_itp(dq)
@@ -173,17 +164,27 @@ class BoundaryCondition:
             self.uk = float(uk_dL(self.kL))
             Rek_check = self.uk * self.kL / nu
 
-            print(f"k        = {self.kL:.6e}L")
-            print(f"u_k      = {self.uk:.6f}Uinf")
-            print(f"************** Sanity check: achieved Rek = {Rek_check:.1f}")
+
 
             self.sin = self.sloc - self.Lin * self.kL
             self.xin = float(x_of_s(self.sin))
             x_in_loc = (self.sin - self.sloc) / self.kL
 
-            print(f"s_in     = {self.sin:.6f}L")
-            print(f"x_in     = {self.xin:.6f}L")
-            print(f"x_in_loc = {x_in_loc:.1f}k")
+            if verbose:
+                print("---------------------------------INPUTS------------------------------------")
+                print(f"Re_inf   = {self.Rei:.0e}")
+                print(f"xc       = {loc:.6f}")
+                print(f"sc       = {self.sloc:.6f}")
+                print(f"Uinf_xc  = {self.Ui:.6f}")
+                print(f"Rek_des  = {Rek_des:.0f}")
+
+                print("--------------------------BLADE BOUNDARY LAYER------------------------------")
+                print(f"k        = {self.kL:.6e}L")
+                print(f"u_k      = {self.uk:.6f}Uinf")
+                print(f"************** Sanity check: achieved Rek = {Rek_check:.1f}")
+                print(f"s_in     = {self.sin:.6f}L")
+                print(f"x_in     = {self.xin:.6f}L")
+                print(f"x_in_loc = {x_in_loc:.1f}k")
 
             self.d99L = d99_c / fct
             self.kd99 = self.kL / self.d99L
