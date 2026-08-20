@@ -1,6 +1,8 @@
 import time, datetime
 import numpy as np
 from pathlib import Path
+import functools
+print = functools.partial(print, flush=True)
 
 from nekPy.utils.misc import logger
 from nekPy.utils.bash import run_command, mkdir
@@ -36,15 +38,16 @@ def objective(x, opt):
     # launch the sim
     launcher = Launcher(outit)
     launcher.submit(slurm_script=config/'run.slurm')
+    print("\nSimulation submitted. Waiting to finish...")
 
     # check if it finished
     while True:
         if (outit / 'done.flag').exists(): break
         time.sleep(10)
-    print("Simulation done. Postprocessing")
+    print("\nSimulation done. Postprocessing")
 
     sim_res = list(outit.glob('avg*.f*'))[0]
-    J = misfit(sim_res, obsfile, bounds=[.5, 50., -4., 4.], verbose=False)
+    J = misfit(sim_res, obsfile, obsnu=1./800., bounds=[.5, 50., -4., 4.], verbose=False)
 
     # cleanup
     run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag', outit)

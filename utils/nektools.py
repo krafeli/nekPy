@@ -32,7 +32,7 @@ def cleandir(dir):
 
 
 def makenek(dir, name):
-    run_command([f"makenek {name}"], dir=dir)
+    run_command([f"makenek {name} > makenek.log"], dir=dir)
 
 
 def parse_value(value):
