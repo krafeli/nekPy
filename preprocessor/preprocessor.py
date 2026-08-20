@@ -113,10 +113,10 @@ class PreProcessor():
         self.re2 = (self.outdir / self.name).with_suffix(".re2")
         self.ma2 = (self.outdir / self.name).with_suffix(".ma2")
 
-    def generate_bc(self, blfile, mode, loc, **kwargs):
+    def generate_bc(self, blfile, mode, loc, verbose=False, **kwargs):
         if self.bcstate != 0:
             raise ValueError("BC has already been generated")
         Rek = -self.parameters.get('VELOCITY', 'viscosity')
         self.bc = BoundaryCondition(blfile, mode, loc, Rek, self.outdir, **kwargs)
-        self.bc.generate()
+        self.bc.generate(verbose=verbose)
         self.bcstate = 1
