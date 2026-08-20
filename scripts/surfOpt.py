@@ -51,6 +51,8 @@ def objective(x, opt):
 
     # cleanup
     run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag', outit)
+
+    print("(x, J(x))=", x, J)
     return J
 
 opt.set_objective(objective)
