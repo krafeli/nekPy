@@ -20,7 +20,7 @@ obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek800_xc005.f00001")
 mkdir(out)
 log = logger(out)
 
-opt = Optimization(out, bounds=[(200, 2000)], neval=25)
+opt = Optimization(out, bounds=[(200., 2000.)], neval=25)
 
 def objective(x, opt):
     x = np.asarray(x)
@@ -47,7 +47,7 @@ def objective(x, opt):
     print("\nSimulation done. Postprocessing")
 
     sim_res = list(outit.glob('avg*.f*'))[0]
-    J = misfit(sim_res, obsfile, obsnu=1./800., bounds=[.5, 50., -4., 4.], verbose=False)
+    J = misfit(sim_res, obsfile, obsnu=1./800., verbose=False)
 
     # cleanup
     run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag', outit)
