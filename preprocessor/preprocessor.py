@@ -3,7 +3,7 @@ from nekPy.preprocessor.mesh import Mesh
 from nekPy.preprocessor.bc import BoundaryCondition
 from nekPy.utils.nektools import ParFile, SizeFile, msh2nek
 from nekPy.utils.bash import copy, mkdir
-
+from nekPy.utils.io import write_json
 
 class PreProcessor():
 
@@ -12,11 +12,20 @@ class PreProcessor():
         self.outdir = Path(outdir)
         mkdir(outdir)
 
+        self.additional_files_origin = []
+        self.additional_files = []
+
         if additional_files is not None:
             for f in additional_files:
                 f = Path(f)
+
+                self.additional_files_origin.append(f)
+
+                dst = self.outdir / f.name
                 print(f"Copying {str(f)} to {str(self.outdir)}")
-                copy(f, self.outdir / f.name)
+                copied = copy(f, dst)
+
+                self.additional_files.append(Path(copied))
 
         usr = Path(usr)
         par = Path(par)
@@ -64,48 +73,93 @@ class PreProcessor():
         if save_originals:
             original_dir = self.outdir / "original_config"
             mkdir(original_dir)
+
             copy(self.usr_origin, original_dir / self.usr_origin.name)
             copy(self.par_origin, original_dir / self.par_origin.name)
             copy(self.size_origin, original_dir / self.size_origin.name)
+
             if self.msh_origin:
                 copy(self.msh_origin, original_dir / self.msh_origin.name)
+
             if self.re2_origin:
                 copy(self.re2_origin, original_dir / self.re2_origin.name)
+
             if self.ma2_origin:
                 copy(self.ma2_origin, original_dir / self.ma2_origin.name)
+
+            for f in self.additional_files_origin:
+                copy(f, original_dir / f.name)
 
 
         self.bc = None
         self.bcstate = 0
-
+        self.save_config()
+        
     def __str__(self):
         return (
             f"PreProcessor:\n"
-            f"  name        = {self.name}\n"
-            f"  outdir      = {self.outdir}\n"
+            f"  name                    = {self.name}\n"
+            f"  outdir                  = {self.outdir}\n"
             f"\n"
-            f"  usr_origin  = {self.usr_origin}\n"
-            f"  par_origin  = {self.par_origin}\n"
-            f"  size_origin = {self.size_origin}\n"
-            f"  msh_origin  = {self.msh_origin}\n"
-            f"  re2_origin  = {self.re2_origin}\n"
-            f"  ma2_origin  = {self.ma2_origin}\n"
+            f"  usr_origin              = {self.usr_origin}\n"
+            f"  par_origin              = {self.par_origin}\n"
+            f"  size_origin             = {self.size_origin}\n"
+            f"  msh_origin              = {self.msh_origin}\n"
+            f"  re2_origin              = {self.re2_origin}\n"
+            f"  ma2_origin              = {self.ma2_origin}\n"
+            f"  additional_files_origin = {self.additional_files_origin}\n"
             f"\n"
-            f"  usrfile     = {self.usrfile}\n"
-            f"  parfile     = {self.parfile}\n"
-            f"  sizefile    = {self.sizefile}\n"
-            f"  msh         = {self.msh}\n"
-            f"  re2         = {self.re2}\n"
-            f"  ma2         = {self.ma2}\n"
+            f"  usrfile                 = {self.usrfile}\n"
+            f"  parfile                 = {self.parfile}\n"
+            f"  sizefile                = {self.sizefile}\n"
+            f"  msh                     = {self.msh}\n"
+            f"  re2                     = {self.re2}\n"
+            f"  ma2                     = {self.ma2}\n"
+            f"  additional_files        = {self.additional_files}\n"
             f"\n"
-            f"  bcstate     = {self.bcstate}\n"
-            f"  bc          = {self.bc}"
+            f"  bcstate                 = {self.bcstate}\n"
+            f"  bc                      = {self.bc}"
         )
 
+    def save_config(self):
+
+        config = {
+            "name": self.name,
+            "outdir": str(self.outdir),
+
+            "usr_origin": str(self.usr_origin),
+            "par_origin": str(self.par_origin),
+            "size_origin": str(self.size_origin),
+            "msh_origin": str(self.msh_origin) if self.msh_origin is not None else None,
+            "re2_origin": str(self.re2_origin) if self.re2_origin is not None else None,
+            "ma2_origin": str(self.ma2_origin) if self.ma2_origin is not None else None,
+
+            "additional_files_origin": [
+                str(f) for f in self.additional_files_origin
+            ],
+
+            "usrfile": str(self.usrfile),
+            "parfile": str(self.parfile),
+            "sizefile": str(self.sizefile),
+
+            "msh": str(self.msh.mshfile) if self.msh is not None else None,
+            "re2": str(self.re2) if self.re2 is not None else None,
+            "ma2": str(self.ma2) if self.ma2 is not None else None,
+
+            "additional_files": [
+                str(f) for f in self.additional_files
+            ],
+
+            "bcstate": self.bcstate,
+        }
+
+        write_json(config, str(self.outdir / "preprocessor.json"))
+    
     def generate_mesh(self, k, eta, Lx, Ly, Lz, Lin=15, N=None, Nin=None, Nx=None, Ny=None, Nz=None, show=False):
         outfile = (self.outdir / f"{self.name}_{k}_{eta}").with_suffix(".msh")
         self.msh = Mesh(outfile=outfile, k=k, eta=eta, Lx=Lx, Ly=Ly, Lz=Lz, Lin=Lin, N=N, Nin=Nin, Nx=Nx, Ny=Ny, Nz=Nz)
         self.msh.generate(show=show)
+        self.save_config()
 
     def msh2nek(self, **kwargs):
         if self.msh is None:
@@ -113,7 +167,8 @@ class PreProcessor():
         msh2nek(self.outdir, self.msh.mshfile.stem, self.name, **kwargs)
         self.re2 = (self.outdir / self.name).with_suffix(".re2")
         self.ma2 = (self.outdir / self.name).with_suffix(".ma2")
-
+        self.save_config()
+        
     def generate_bc(self, blfile, mode, loc, verbose=False, **kwargs):
         if self.bcstate != 0:
             raise ValueError("BC has already been generated")
@@ -121,3 +176,4 @@ class PreProcessor():
         self.bc = BoundaryCondition(blfile, mode, loc, Rek, self.outdir, **kwargs)
         self.bc.generate(verbose=verbose)
         self.bcstate = 1
+        self.save_config()
