@@ -15,6 +15,7 @@ class PreProcessor():
         if additional_files is not None:
             for f in additional_files:
                 f = Path(f)
+                print(f"Copying {str(f)} to {str(self.outdir)}")
                 copy(f, self.outdir / f.name)
 
         usr = Path(usr)

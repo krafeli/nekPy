@@ -1,12 +1,12 @@
 from pathlib import Path
-from nekPy.launcher.launcher import Launcher
-from nekPy.preprocessor.preprocessor import PreProcessor
+from nekPy.launcher import Launcher
+from nekPy.preprocessor import PreProcessor
 
 config = Path("/scratch/projects/hbi00065/3d/DU95W180/long/base")
 bl = config / 'bl.pkl'
 slurm = config / 'run.slurm'
 loc = 0.05
-modes = ['blade', 'blasius']
+modes = ['blasius', 'blade']
 
 Reks = [500., 600., 700., 800.]
 
@@ -16,15 +16,18 @@ for mode in modes:
         print(f'Building and submitting {job_name}')
         out = Path(f"/scratch/projects/hbi00065/3d/DU95W180/long/{mode}/xc{str(loc).replace('.', '')}/Rek{Rek:.0f}")
 
-
+        init = Path(f"/scratch/projects/hbi00065/3d/DU95W180/{mode}/xc{str(loc).replace('.', '')}/Rek{Rek:.0f}/loc30.f00005")
+        
         preproc = PreProcessor(out, 
                             name='loc3', 
                             usr=config / f'loc3_{mode}.usr', 
                             par=config / f'loc3_{mode}.par',
                             size= config / 'SIZE', 
                             re2=config / 'loc3.re2', 
-                            ma2=config / 'loc3.ma2')
+                            ma2=config / 'loc3.ma2',
+                            additional_files=[init])
 
+        preproc.parameters.set('GENERAL', 'startFrom', 'loc30.f00005 int time=0.0')
         preproc.parameters.set('VELOCITY', 'viscosity', -Rek)
 
         if mode == 'blasius':
