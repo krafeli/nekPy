@@ -164,8 +164,6 @@ class BoundaryCondition:
             self.uk = float(uk_dL(self.kL))
             Rek_check = self.uk * self.kL / nu
 
-
-
             self.sin = self.sloc - self.Lin * self.kL
             self.xin = float(x_of_s(self.sin))
             x_in_loc = (self.sin - self.sloc) / self.kL
@@ -204,7 +202,7 @@ class BoundaryCondition:
                 np.savetxt(self.inflow_file, np.column_stack((yq_in, ut_in_itp(yq_in), un_in_itp(yq_in))),
                            header=f"y/k   ut/uk   un/uk (Rek={Rek_des:.0f}, xloc={loc:.2f})", fmt="%.12e")
 
-            sq = np.linspace(self.sin, s_wall.max(), 100000)
+            sq = np.linspace(self.sin-1e-6, s_wall.max(), 100000)
             x_top, ut_top, un_top = [], [], []
 
             for si in sq:
