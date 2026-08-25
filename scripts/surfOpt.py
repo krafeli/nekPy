@@ -6,7 +6,7 @@ print = functools.partial(print, flush=True)
 
 from nekPy.utils.misc import logger
 from nekPy.utils.bash import run_command, mkdir
-from nekPy.preprocessor import PreProcessor, BoundaryCondition
+from nekPy.preprocessor import PreProcessor
 from nekPy.launcher import Launcher
 from nekPy.optimization import Optimization
 from nekPy.optimization.objectives import misfit
@@ -36,17 +36,25 @@ def objective(x, opt):
     pre.generate_bc(blfile, mode='blade', loc=xloc, Lin=15.)
 
     # launch the sim
-    launcher = Launcher(outit)
-    launcher.submit(slurm_script=config/'run.slurm')
-    print("\nSimulation submitted. Waiting to finish...")
-
-    # check if it finished
+    print("\nSubmitting simulation. Waiting to finish...")
     while True:
-        if (outit / 'done.flag').exists(): break
-        time.sleep(10)
-    print("\nSimulation done. Postprocessing")
+        done_flag = outit / 'done.flag'
+        done_flag.unlink(missing_ok=True)
 
-    sim_res = list(outit.glob('avg*.f*'))[0]
+        launcher = Launcher(outit)
+        launcher.submit(slurm_script=config / 'run.slurm')
+
+        # Wait until Slurm job creates done.flag
+        while not done_flag.exists():
+            time.sleep(10)
+
+        # check if the simulation succeeded
+        sim_res = outit / 'avg0.f00001'
+        if sim_res.exists():
+            print("\nSimulation done. Postprocessing...")
+            break
+        print("\nSimulation failed. Resubmitting...")
+
     J = misfit(sim_res, obsfile, obsnu=1./800., verbose=False)
 
     # cleanup
