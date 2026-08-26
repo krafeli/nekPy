@@ -13,14 +13,15 @@ from nekPy.optimization.objectives import misfit
 
 
 config = Path("/home/felix.kranz/thermoSurf/3d/opt/config")
-out = Path("/home/felix.kranz/thermoSurf/3d/opt/out/test_opt")
+out = Path("/home/felix.kranz/thermoSurf/3d/opt/out/Cf_fitting")
 blfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Re1e6.pkl")
-obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek800_xc005.f00001")
+obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek900_xc005.f00001")
 
 mkdir(out)
 log = logger(out)
 
-opt = Optimization(out, bounds=[(200., 2000.)], neval=25)
+opt = Optimization(out, bounds=[(250., 2500.)], neval=25, tol=5e-2)
+
 
 def objective(x, opt):
     x = np.asarray(x)
@@ -55,10 +56,10 @@ def objective(x, opt):
             break
         print("\nSimulation failed. Resubmitting...")
 
-    J = misfit(sim_res, obsfile, obsnu=1./800., verbose=False)
+    J = misfit(sim_res, obsfile, bounds=[5., 50., -5., 5.], nuobs=1./900., verbose=False)
 
     # cleanup
-    run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag', outit)
+    run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag *loc30.f*', outit)
 
     print("(x, J(x))=", x, J)
     return J
