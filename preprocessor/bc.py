@@ -1,7 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from scipy.interpolate import interp1d
-from scipy.optimize import root_scalar, minimize_scalar
+from scipy.optimize import root_scalar, minimize_scalar, curve_fit
 
 from pathlib import Path
 
@@ -111,7 +112,7 @@ class BoundaryCondition:
 
         return s + "\n)"
 
-    def generate(self, save_config=True, verbose=True):
+    def generate(self, save_config=True, verbose=True, plot_profiles=True):
 
         bl = self.bl
         loc = self.xloc
@@ -225,6 +226,27 @@ class BoundaryCondition:
             print(f"Wrote {self.inflow_file}")
             print(f"Wrote {self.top_file}")
 
+            if plot_profiles:
+
+                # Blade profile at the actual roughness location xloc
+                y_blade_k = d_c / fct / self.kL
+                u_blade_uk = ut_c / self.uk
+
+                fig, ax = plt.subplots()
+
+                ax.plot(u_blade_uk, y_blade_k, label=fr"Blade profile, $x/L={loc:.3f}$", color="blue")
+                ax.axhline(self.d99k, label=fr"$d_{{99}}={self.d99k:.3f}$, $k/d_{{99}}={1./self.d99k:.3f}$", color="blue", linestyle="--")
+                ax.set_xlabel(r"$u/u_k$")
+
+                ax.set_ylabel(r"$y/k$")
+                ax.set_ylim(0., self.h)
+                ax.grid(True, alpha=0.5)
+                ax.legend()
+
+                if self.outdir: plt.savefig(self.outdir / 'profiles.pdf')
+                plt.show()
+
+
         # Blasius boundary condition
         elif self.mode == "blasius":
 
@@ -239,7 +261,7 @@ class BoundaryCondition:
                 self.blas_file = self.outdir / self.fnames[0]
                 np.savetxt(self.blas_file, np.column_stack((eta_blas, ub_blas, vb_blas)), fmt="%.12e")
 
-            etab_raw, _, ub, _ = solve_blasius(np.linspace(0.0, 50.0, 10000))
+            etab_raw, _, ub, _ = solve_blasius(np.linspace(0.0, 100.0, 10000))
 
             x = bl["x"]
             ut_itp = interp1d(x, bl["ut"], axis=0)
@@ -258,6 +280,12 @@ class BoundaryCondition:
             self.d99L = float(d99_itp(loc)) / fct
             self.Ue = float(np.interp(self.d99L, eta, u))
 
+            #imax = np.argmax(u)
+            #dmax = eta[imax]
+            # Edge velocity = mean of all velocities after the maximum
+            #self.Ue = np.mean(u[eta > dmax])
+            #self.d99L = eta[np.where(u >= 0.99 * self.Ue)[0][0]]
+
             Rek = eta * u / nu
             ki = np.where(Rek >= Rek_des)[0][0]
 
@@ -265,9 +293,6 @@ class BoundaryCondition:
             self.uk = np.interp(self.kL, eta, u)
             self.d99k = self.d99L / self.kL
             self.kd99 = self.kL / self.d99L
-
-            etab = etab_raw / fct
-            ukb_fixed_x = np.interp(self.kL, etab, ub)
 
             def blasius_mse(x_shifted):
                 fct_shifted = np.sqrt(self.Ue / (nu * x_shifted))
@@ -323,6 +348,32 @@ class BoundaryCondition:
             print(f"{'Blasius eta_99':<{label_width}} = {self.d99L_b:{L_fmt}}L = {self.d99k_b:{k_fmt}}k")
             print(f"{'Blasius k/eta_99':<{label_width}} = {self.kd99_b:.8e}")
             print(f"\nWrote {self.blas_file}")
+
+            if plot_profiles:
+
+                # Blade profile at the actual roughness location xloc
+                y_blade_k = eta / self.kL
+                u_blade_uk = u / self.uk
+                # Matched Blasius profile at xloc
+                y_blas_k = etab_shifted / self.kL
+                u_blas_uk = ub / self.ukb_shifted_raw
+
+                fig, ax = plt.subplots()
+
+                ax.plot(u_blade_uk, y_blade_k, label=fr"Blade profile, $x/L={loc:.3f}$", color="blue")
+                ax.plot(u_blas_uk, y_blas_k, label=fr"Blasius profile, $x/L={loc:.3f}$", color="red")
+                ax.axhline(self.d99k, linestyle="--", label=fr"Blade $d_{{99}}={self.d99k:.3f}$, $k/d_{{99}}={1. / self.d99k:.3f}$", color="blue")
+                ax.axhline(self.d99k_b, linestyle="-.", label=fr"Blasius $d_{{99}}={self.d99k_b:.3f}$, $k/d_{{99}}={1. / self.d99k_b:.3f}$", color="red")
+                ax.set_xlabel(r"$u/u_k$")
+                ax.set_ylabel(r"$y/k$")
+                ax.set_ylim(0., self.h)
+                ax.grid(True, alpha=0.5)
+                ax.legend()
+
+                if self.outdir:
+                    plt.savefig(self.outdir / "profiles.pdf")
+
+                plt.show()
 
         if save_config:
             config = {
