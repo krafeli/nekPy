@@ -17,15 +17,20 @@ class PreProcessor():
 
         if additional_files is not None:
             for f in additional_files:
-                f = Path(f)
+                        if isinstance(f, (list, tuple)):
+                            src, dst_name = f
+                            src = Path(src)
+                            dst = self.outdir / dst_name
+                        else:
+                            src = Path(f)
+                            dst = self.outdir / src.name
 
-                self.additional_files_origin.append(f)
+                        self.additional_files_origin.append(src)
 
-                dst = self.outdir / f.name
-                print(f"Copying {str(f)} to {str(self.outdir)}")
-                copied = copy(f, dst)
+                        print(f"Copying {str(src)} to {str(dst)}")
+                        copied = copy(src, dst)
 
-                self.additional_files.append(Path(copied))
+                        self.additional_files.append(Path(copied))
 
         usr = Path(usr)
         par = Path(par)
