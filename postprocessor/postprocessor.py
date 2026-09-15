@@ -387,18 +387,32 @@ class PostProcessor():
         xq = _make_axis(xmn, xmx, hx)
         yq = _make_axis(ymn, ymx, hy)
         zq = _make_axis(zmn, zmx, hz)
+
+        if self.dim == 3:
+            Xq, Yq, Zq = np.meshgrid(xq, yq, zq, indexing='ij')
+            XYZq = np.column_stack([Xq.ravel(), Yq.ravel(), Zq.ravel()])
+            itp_fields = self.interpolate(XYZq, fields, shape=Xq.shape)
+            slc = tuple(0 if len(q) == 1 else slice(None) for q in (xq, yq, zq))
+            Xq = Xq[slc]
+            Yq = Yq[slc]
+            Zq = Zq[slc]
+            itp_fields = [f[slc] for f in itp_fields]
+            return Xq, Yq, Zq, *itp_fields
+        elif self.dim == 2:
+            Xq, Yq = np.meshgrid(xq, yq, indexing='ij')
+            XYq = np.column_stack([Xq.ravel(), Yq.ravel()])
+            itp_fields = self.interpolate(XYq, fields, shape=Xq.shape)
+            slc = tuple(0 if len(q) == 1 else slice(None) for q in (xq, yq))
+            Xq = Xq[slc]
+            Yq = Yq[slc]
+            itp_fields = [f[slc] for f in itp_fields]
+            return Xq, Yq, *itp_fields
+        else:
+            raise ValueError(f"Dimension {self.dim} not supported in box_itp")
+            return
+
         
-        Xq, Yq, Zq = np.meshgrid(xq, yq, zq, indexing='ij')
-        XYZq = np.column_stack([Xq.ravel(), Yq.ravel(), Zq.ravel()])
-        itp_fields = self.interpolate(XYZq, fields, shape=Xq.shape)
-        
-        slc = tuple(0 if len(q) == 1 else slice(None) for q in (xq, yq, zq))
-        Xq = Xq[slc]
-        Yq = Yq[slc]
-        Zq = Zq[slc]
-        itp_fields = [f[slc] for f in itp_fields]
-        
-        return Xq, Yq, Zq, *itp_fields
+
         
     
     def var(self, var_path=None, sqrt=False):
