@@ -293,7 +293,7 @@ class PostProcessor():
 
     # interpolation
     def interpolate(self, xyz, fields, mask=None, bounds=None, fill_value=None,
-                    max_pts=128, shape=-1, probes=None, return_probes=False):
+                   shape=-1, probes=None, return_probes=False, broadcast=True, **kwargs):
 
         for f in fields:
             if not self.has_field(f):
@@ -340,14 +340,14 @@ class PostProcessor():
             n = None
 
         if probes is None:
-            probes = Probes(self.comm, probes=pts, msh=msh_itp, max_pts=max_pts,
+            probes = Probes(self.comm, probes=pts, msh=msh_itp,
                             point_interpolator_type="multiple_point_legendre_numpy",
-                            find_points_comm_pattern="point_to_point",
-                            write_coords=False)
+                            find_points_tol=np.finfo(self.dtype).eps * 10,
+                            write_coords=False, **kwargs)
 
         field_list = [fld_itp.registry[fi] for fi in fields]
         probes.interpolate_from_field_list(0, field_list, self.comm, write_data=False)
-
+        
         if self.rank0:
             data = probes.interpolated_fields[:, 1:]
             err = probes.itp.err_code
@@ -363,7 +363,8 @@ class PostProcessor():
                 out_fields.append(full_data.reshape(shape))
         else:
             out_fields = None
-        out_fields = self.comm.bcast(out_fields, root=0)
+        
+        if broadcast: out_fields = self.comm.bcast(out_fields, root=0)
 
         if return_probes: return out_fields, probes
         return out_fields
