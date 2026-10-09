@@ -1,6 +1,7 @@
 from pathlib import Path
 from nekPy.preprocessor.mesh import Mesh
 from nekPy.preprocessor.bc import BoundaryCondition
+from nekPy.preprocessor.ic import InitialCondition
 from nekPy.utils.nektools import ParFile, SizeFile, msh2nek
 from nekPy.utils.bash import copy, mkdir
 from nekPy.utils.io import write_json
@@ -27,7 +28,7 @@ class PreProcessor():
 
                         self.additional_files_origin.append(src)
 
-                        print(f"Copying {str(src)} to {str(dst)}")
+                        print(f"Copying {str(src)}\n     to {str(dst)}")
                         copied = copy(src, dst)
 
                         self.additional_files.append(Path(copied))
@@ -98,6 +99,10 @@ class PreProcessor():
 
         self.bc = None
         self.bcstate = 0
+        
+        self.ic = None
+        self.icstate = 0
+        
         self.save_config()
         
     def __str__(self):
@@ -156,6 +161,7 @@ class PreProcessor():
             ],
 
             "bcstate": self.bcstate,
+            "icstate": self.icstate,
         }
 
         write_json(config, str(self.outdir / "preprocessor.json"))
@@ -181,4 +187,13 @@ class PreProcessor():
         self.bc = BoundaryCondition(blfile, mode, loc, Rek, self.outdir, **kwargs)
         self.bc.generate(verbose=verbose)
         self.bcstate = 1
+        self.save_config()
+        
+    def generate_ic(self, blfile, loc, Lin, Lout, **kwargs):
+        if self.icstate != 0:
+            raise ValueError("IC has already been generated")
+        Rek = -self.parameters.get('VELOCITY', 'viscosity')
+        self.ic = InitialCondition(blfile, loc, Rek, Lin, Lout, outdir=self.outdir, **kwargs)
+        self.ic.generate()
+        self.icstate = 1
         self.save_config()

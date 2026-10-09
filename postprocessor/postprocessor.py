@@ -84,8 +84,8 @@ class PostProcessor():
         pynekwrite(str(out_path), self.comm, msh=self.msh, fld=self.fld, write_mesh=True)
         write_json(self.scalar_mapping, out_path.parent / f"scalar_mapping.json")
 
-    def available_fields(self, verbose=True):
-        if verbose: print("Available fields:", list(self.fld.registry.keys()))
+    def available_fields(self, verbose=False):
+        if self.verbose or verbose: print("Available fields:", list(self.fld.registry.keys()))
         return list(self.fld.registry.keys())
 
     def get_time(self):
@@ -368,6 +368,7 @@ class PostProcessor():
         if return_probes: return out_fields, probes
         return out_fields
 
+    
     def box_itp(self, xmn, xmx, ymn, ymx, zmn, zmx, h, fields):
         
         def _make_axis(mn, mx, h):
