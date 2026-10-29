@@ -172,17 +172,21 @@ class PostProcessor():
 
         return np.column_stack((x[m], y[m], z[m])), out_fields
 
-
-    # legacy field smoothing (NOT WORKING)
+    # Field smoothing
     def smooth(self, fld, inplace=False):
-        msh_con = MeshConnectivity(self.comm, self.msh, rel_tol=1e-5)
         target = self.get_field(fld)
-        fld = target.copy()
-        fld = msh_con.dssum(field=fld, msh=self.msh, average="multiplicity")
+        original = target.copy()
+        
+        if self.msh_con is None:
+            self.msh_con = MeshConnectivity(self.comm, self.msh, rel_tol=1e-5, use_hashtable=True)
+
+        smoothed = self.msh_con.dssum(field=original.copy(), msh=self.msh, average="multiplicity")
+        
         if inplace:
-            target[...] = fld
+            target[...] = smoothed
             return target
-        return fld
+
+        return smoothed
     
     # derivatives
     def differentiate(self, fields, directions, smooth=False, verbose=False):
