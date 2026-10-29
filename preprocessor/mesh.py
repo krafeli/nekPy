@@ -43,7 +43,7 @@ def reverse_progression(heights):
 class Mesh:
 
     def __init__(self, mshfile=None, outfile=None, k=None, eta=None, Lx=None, Ly=None, Lz=None, Lin=15,
-        size_k=1/6, size_x=0.8, size_yk=0.12, size_y=0.75, size_z=None, size_in=1.20, d=None, STEP=0.1):
+        size_k=1/6, size_x=0.8, size_yk=0.12, size_y=0.75, size_z=None, size_in=1.20, d=None, STEP=0.05):
 
         if mshfile is None and outfile is None:
             raise ValueError("Provide either mshfile or outfile")
@@ -113,8 +113,8 @@ class Mesh:
     # ---------------------------------------------------------------------------
     def _candidate_values(self, ra, size_k):
         """Return d candidates from smallest to largest."""
-        d_min = ra + 0.5 * size_k
-        d_max = ra + 5.0 * size_k
+        d_min = ra + 0.25 * size_k
+        d_max = ra + 5.00 * size_k
         step = self.STEP * size_k
         return np.arange(d_min, d_max + 0.5 * step, step)
 

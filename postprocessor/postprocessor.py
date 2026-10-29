@@ -173,20 +173,19 @@ class PostProcessor():
         return np.column_stack((x[m], y[m], z[m])), out_fields
 
 
-    # field smoothing (NOT WORKING)
-    def smooth(self, fld, inplace=False, iters=1):
+    # legacy field smoothing (NOT WORKING)
+    def smooth(self, fld, inplace=False):
         msh_con = MeshConnectivity(self.comm, self.msh, rel_tol=1e-5)
         target = self.get_field(fld)
         fld = target.copy()
-        for _ in range(iters):
-            fld = msh_con.dssum(field=fld, msh=self.msh, average="multiplicity")
+        fld = msh_con.dssum(field=fld, msh=self.msh, average="multiplicity")
         if inplace:
             target[...] = fld
             return target
         return fld
-
+    
     # derivatives
-    def differentiate(self, fields, directions, smooth=0, verbose=False):
+    def differentiate(self, fields, directions, smooth=False, verbose=False):
 
         name_fmt = "d{f}d{d}"
         if not self.coef:
@@ -209,7 +208,7 @@ class PostProcessor():
 
                 if self.has_field(name):
                     deriv = self.get_field(name)
-                    if smooth: deriv = self.smooth(name, inplace=True, iters=smooth)
+                    if smooth: deriv = self.smooth(name, inplace=True)
 
                     outfields.append(deriv)
                     continue
@@ -244,16 +243,16 @@ class PostProcessor():
 
 
                 self.add_field(name, deriv, verbose=verbose)
-                if smooth != 0: deriv = self.smooth(name, inplace=True, iters=smooth)
+                if smooth != 0: deriv = self.smooth(name, inplace=True)
                 outfields.append(deriv)
 
         if self.verbose:
             print("Done calculating derivatives.")
             print("Available fields:", list(self.fld.registry.keys()))
 
-        return outfields
+        return (outfields[0] if len(outfields) == 1 else outfields)
 
-    def compute_grads(self, smooth=0):
+    def compute_grads(self, smooth=False):
         if self.dim == 3:
             fields = ["u", "v", "w", "p", "t"]
             directions = ["x", "y", "z"]
@@ -412,10 +411,6 @@ class PostProcessor():
         else:
             raise ValueError(f"Dimension {self.dim} not supported in box_itp")
             return
-
-        
-
-        
     
     def var(self, var_path=None, sqrt=False):
         pth = Path(self.path)
@@ -584,7 +579,7 @@ class PostProcessor():
             self.add_field(f"{out_name}zz", tau[2, 2, :])
         return tau
 
-    def lambda2(self, smooth=0, out_name="l2"):
+    def lambda2(self, smooth=False, out_name="l2"):
         G = self.grad_u(smooth=smooth, remove_fields=True)
         S = 0.5 * (G + np.swapaxes(G, 0, 1))
         O = 0.5 * (G - np.swapaxes(G, 0, 1))
@@ -600,7 +595,7 @@ class PostProcessor():
 
         return lam2
 
-    def ekin(self, smooth=False, out_name="E"):
+    def ekin(self, out_name="E"):
         u, v, w = self.get_fields(['u', 'v', 'w'])
         E = 0.5 * np.sqrt(u**2 + v**2 + w**2)
         self.add_field(f"{out_name}", E)
