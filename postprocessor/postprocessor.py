@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from pathlib import Path
 
-from .mpi import comm, rank, nranks, rank0
+from .mpi import comm, print0, rank, nranks, rank0
 
 from nekPy.postprocessor.pysemtools.io.ppymech.neksuite import pynekread, pynekwrite
 from nekPy.postprocessor.pysemtools.datatypes.msh import Mesh
@@ -18,7 +18,7 @@ from nekPy.utils.nektools import ParFile
 
 class PostProcessor():
 
-    def __init__(self, path, dtype=np.double, msh=None, fld=None, coef=None, create_connectivity=False, get_coef=False, verbose=True):
+    def __init__(self, path, dtype=np.single, msh=None, fld=None, coef=None, create_connectivity=False, get_coef=False, verbose=True):
 
         if not verbose:
             logging.disable(logging.CRITICAL)
@@ -173,14 +173,15 @@ class PostProcessor():
         return np.column_stack((x[m], y[m], z[m])), out_fields
 
     # Field smoothing
-    def smooth(self, fld, inplace=False):
-        target = self.get_field(fld)
-        original = target.copy()
+    def smooth(self, fld, inplace=False, verbose=False):
+
+        if self.verbose or verbose: print0(f"Smoothing field {fld}...")
         
+        target = self.get_field(fld)
+                  
         if self.msh_con is None:
             self.msh_con = MeshConnectivity(self.comm, self.msh, rel_tol=1e-5, use_hashtable=True)
-
-        smoothed = self.msh_con.dssum(field=original.copy(), msh=self.msh, average="multiplicity")
+        smoothed = self.msh_con.dssum(field=target.copy(), msh=self.msh, average="multiplicity")
         
         if inplace:
             target[...] = smoothed
@@ -244,14 +245,13 @@ class PostProcessor():
                     )
                 else:
                     raise ValueError(f"Unknown direction '{direction}'. Must be one of ('x','y','z').")
-
-
+                
                 self.add_field(name, deriv, verbose=verbose)
-                if smooth != 0: deriv = self.smooth(name, inplace=True)
+                if smooth: deriv = self.smooth(name, inplace=True)
                 outfields.append(deriv)
 
         if self.verbose:
-            print("Done calculating derivatives.")
+            print("Done calculating derivative(s).")
             print("Available fields:", list(self.fld.registry.keys()))
 
         return (outfields[0] if len(outfields) == 1 else outfields)
@@ -517,17 +517,17 @@ class PostProcessor():
         """
         Compute gradU = ∇U and return as (3,3,npts,lx1,lx1,lx1).
         """
-        dudx = self.differentiate(['u'], ['x'], smooth=smooth)[0]
-        dudy = self.differentiate(['u'], ['y'], smooth=smooth)[0]
-        dvdx = self.differentiate(['v'], ['x'], smooth=smooth)[0]
-        dvdy = self.differentiate(['v'], ['y'], smooth=smooth)[0]
+        dudx = self.differentiate(['u'], ['x'], smooth=smooth)
+        dudy = self.differentiate(['u'], ['y'], smooth=smooth)
+        dvdx = self.differentiate(['v'], ['x'], smooth=smooth)
+        dvdy = self.differentiate(['v'], ['y'], smooth=smooth)
         names = ['dudx', 'dudy', 'dvdx', 'dvdy']
         if self.dim == 3:
-            dudz = self.differentiate(['u'], ['z'], smooth=smooth)[0]
-            dvdz = self.differentiate(['v'], ['z'], smooth=smooth)[0]
-            dwdx = self.differentiate(['w'], ['x'], smooth=smooth)[0]
-            dwdy = self.differentiate(['w'], ['y'], smooth=smooth)[0]
-            dwdz = self.differentiate(['w'], ['z'], smooth=smooth)[0]
+            dudz = self.differentiate(['u'], ['z'], smooth=smooth)
+            dvdz = self.differentiate(['v'], ['z'], smooth=smooth)
+            dwdx = self.differentiate(['w'], ['x'], smooth=smooth)
+            dwdy = self.differentiate(['w'], ['y'], smooth=smooth)
+            dwdz = self.differentiate(['w'], ['z'], smooth=smooth)
             names += ['dudz', 'dvdz', 'dwdx', 'dwdy', 'dwdz']
         else:
             dudz = np.zeros_like(dudx)
@@ -598,9 +598,24 @@ class PostProcessor():
         self.add_field(f"{out_name}", lam2)
 
         return lam2
+    
+    def q_criterion(self, smooth=False, out_name="Q"):
+        G = self.grad_u(smooth=smooth, remove_fields=True)
+
+        S = 0.5 * (G + np.swapaxes(G, 0, 1))
+        O = 0.5 * (G - np.swapaxes(G, 0, 1))
+
+        SS = np.einsum('ij...,ij...->...', S, S)
+        OO = np.einsum('ij...,ij...->...', O, O)
+
+        Q = 0.5 * (OO - SS)
+
+        self.add_field(out_name, Q)
+
+        return Q
 
     def ekin(self, out_name="E"):
         u, v, w = self.get_fields(['u', 'v', 'w'])
-        E = 0.5 * np.sqrt(u**2 + v**2 + w**2)
+        E = 0.5 * (u**2 + v**2 + w**2)
         self.add_field(f"{out_name}", E)
         return E

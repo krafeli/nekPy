@@ -967,6 +967,9 @@ class MeshConnectivity:
                             ly_index = vertex_to_slice_map[vertex][1]
                             lx_index = vertex_to_slice_map[vertex][2]
 
+                            # added this
+                            matching_vertex_data = np.asarray(matching_vertex_data).item()
+
                             # Add the data from this rank, element, vertex triad.
                             global_dssum_field[
                                 e, lz_index, ly_index, lx_index
