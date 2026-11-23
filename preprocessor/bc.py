@@ -185,6 +185,8 @@ class BoundaryCondition:
                 print(f"x_in     = {self.xin:.6f}L")
                 print(f"x_in_loc = {x_in_loc:.1f}k")
 
+
+
             self.d99L = d99_c / fct
             self.kd99 = self.kL / self.d99L
             self.d99k = self.d99L / self.kL
@@ -282,7 +284,7 @@ class BoundaryCondition:
 
             #imax = np.argmax(u)
             #dmax = eta[imax]
-            # Edge velocity = mean of all velocities after the maximum
+            #Edge velocity = mean of all velocities after the maximum
             #self.Ue = np.mean(u[eta > dmax])
             #self.d99L = eta[np.where(u >= 0.99 * self.Ue)[0][0]]
 
@@ -420,3 +422,5 @@ class BoundaryCondition:
                 write_json(config, str(self.config_file))
 
         return self
+
+

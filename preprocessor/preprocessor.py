@@ -1,6 +1,7 @@
 from pathlib import Path
 from nekPy.preprocessor.mesh import Mesh
 from nekPy.preprocessor.bc import BoundaryCondition
+from nekPy.preprocessor.ic import InitialCondition
 from nekPy.utils.nektools import ParFile, SizeFile, msh2nek
 from nekPy.utils.bash import copy, mkdir
 from nekPy.utils.io import write_json
@@ -17,15 +18,20 @@ class PreProcessor():
 
         if additional_files is not None:
             for f in additional_files:
-                f = Path(f)
+                        if isinstance(f, (list, tuple)):
+                            src, dst_name = f
+                            src = Path(src)
+                            dst = self.outdir / dst_name
+                        else:
+                            src = Path(f)
+                            dst = self.outdir / src.name
 
-                self.additional_files_origin.append(f)
+                        self.additional_files_origin.append(src)
 
-                dst = self.outdir / f.name
-                print(f"Copying {str(f)} to {str(self.outdir)}")
-                copied = copy(f, dst)
+                        print(f"Copying {str(src)}\n     to {str(dst)}")
+                        copied = copy(src, dst)
 
-                self.additional_files.append(Path(copied))
+                        self.additional_files.append(Path(copied))
 
         usr = Path(usr)
         par = Path(par)
@@ -93,6 +99,10 @@ class PreProcessor():
 
         self.bc = None
         self.bcstate = 0
+        
+        self.ic = None
+        self.icstate = 0
+        
         self.save_config()
         
     def __str__(self):
@@ -151,6 +161,7 @@ class PreProcessor():
             ],
 
             "bcstate": self.bcstate,
+            "icstate": self.icstate,
         }
 
         write_json(config, str(self.outdir / "preprocessor.json"))
@@ -176,4 +187,13 @@ class PreProcessor():
         self.bc = BoundaryCondition(blfile, mode, loc, Rek, self.outdir, **kwargs)
         self.bc.generate(verbose=verbose)
         self.bcstate = 1
+        self.save_config()
+        
+    def generate_ic(self, blfile, loc, Lin, Lout, **kwargs):
+        if self.icstate != 0:
+            raise ValueError("IC has already been generated")
+        Rek = -self.parameters.get('VELOCITY', 'viscosity')
+        self.ic = InitialCondition(blfile, loc, Rek, Lin, Lout, outdir=self.outdir, **kwargs)
+        self.ic.generate()
+        self.icstate = 1
         self.save_config()
