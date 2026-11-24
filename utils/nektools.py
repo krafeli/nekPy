@@ -8,14 +8,12 @@ def gmsh2nek(dir, mshfile, outname, dim=3, periodic_pairs=[]):
     gmsh2nek_input = f'3\n{mshfile}\n0\n{len(periodic_pairs)}'
     for pair in periodic_pairs:
         gmsh2nek_input += f'\n{pair[0]} {pair[1]}'
-
     gmsh2nek_input += f'\n{outname}'
-    run_command(["gmsh2nek"], dir=dir, input=gmsh2nek_input)
-
+    run_command(["gmsh2nek"], dir=dir, verbose=False, input=gmsh2nek_input, logfile=Path(dir) / "gmsh2nek.log")
 
 def genmap(dir, re2file, tol=0.001):
     genmap_input = f'{re2file}\n+{tol}'
-    run_command(["genmap"], dir=dir, input=genmap_input)
+    run_command(["genmap"], dir=dir, verbose=False, input=genmap_input, logfile=Path(dir) / "genmap.log")
 
 
 def msh2nek(dir, mshfile, outname, dim=3, periodic_pairs=[], tol=0.001):

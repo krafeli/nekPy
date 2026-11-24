@@ -166,10 +166,10 @@ class PreProcessor():
 
         write_json(config, str(self.outdir / "preprocessor.json"))
     
-    def generate_mesh(self, k, eta, Lx, Ly, Lz, Lin=15, N=None, Nin=None, Nx=None, Ny=None, Nz=None, show=False):
-        outfile = (self.outdir / f"{self.name}_{k}_{eta}").with_suffix(".msh")
-        self.msh = Mesh(outfile=outfile, k=k, eta=eta, Lx=Lx, Ly=Ly, Lz=Lz, Lin=Lin, N=N, Nin=Nin, Nx=Nx, Ny=Ny, Nz=Nz)
-        self.msh.generate(show=show)
+    def generate_mesh(self, k, eta, Lx, Ly, Lz, size_k, size_x, size_yk, size_y, Lin=15, size_z=None, size_in=1.20):
+        outfile = (self.outdir / f"{self.name}_{k:.2f}_{eta:.2f}.msh")
+        self.msh = Mesh(outfile=outfile, k=k, eta=eta, Lx=Lx, Ly=Ly, Lz=Lz, Lin=Lin, size_k=size_k, size_x=size_x, size_yk=size_yk, size_y=size_y, size_z=size_z, size_in=size_in)
+        self.msh.generate(show=False)
         self.save_config()
 
     def msh2nek(self, **kwargs):

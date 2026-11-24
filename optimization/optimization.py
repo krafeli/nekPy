@@ -6,7 +6,7 @@ from scipy.optimize import minimize
 from skopt import gp_minimize, dump, expected_minimum
 from skopt.callbacks import CheckpointSaver
 
-from nekPy.utils.io import write_json
+from nekPy.utils.io import write_json, write_pkl
 from nekPy.utils.bash import mkdir
 from nekPy.optimization.callbacks import ExpectedMinimumStopper
 
@@ -172,7 +172,7 @@ class Optimization():
         if self.x0 is None: raise ValueError("Scipy optimization requires x0.")
         method = self.options.get("method", "SLSQP")
         tol = self.options.get("tol", None)
-        scipy_options = self.options.get("options", {})
+        scipy_options = self.options.get("options", {})        
         result = minimize(
             self._objective,
             self.x0,
@@ -181,9 +181,14 @@ class Optimization():
             tol=tol,
             options=scipy_options)
 
+        write_pkl(result, str(self.outdir / "optres.pkl"))
         return result
 
     def expected_minimum(self):
-        if self.result is None: raise ValueError("Optimization has not been done.")
-        if self.algorithm != "bayesian": raise ValueError("expected_minimum is only for Bayesian optimization.")
-        return expected_minimum(self.result)
+        if self.algorithm == "bayesian":
+            if self.result is None: 
+                raise ValueError("Optimization has not been done.")
+            return expected_minimum(self.result)
+        else:
+            print("expected_minimum is only for Bayesian optimization.")
+            return None

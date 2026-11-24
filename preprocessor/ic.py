@@ -165,8 +165,9 @@ class InitialCondition:
             self.ic_file = self.outdir / self.fname
             np.savetxt(self.ic_file, np.column_stack((X.ravel(), Y.ravel(), ut.ravel(), un.ravel())),
             fmt="%.12e", header=f"x/k y/k ut/uk un/uk (Rek={Rek_des:.0f}, xc={self.xloc:.2f})")
-        print(f"Wrote {nx*ny:.0f} points to {self.ic_file}")
-
+        #print(f"Wrote {nx*ny:.0f} points to {self.ic_file}")
+        print(f"Wrote {self.ic_file}")
+        
         if plot_ic:
             fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 

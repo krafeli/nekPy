@@ -73,7 +73,7 @@ class Mesh:
         self.STEP = STEP
 
         self.Nelem = None
-
+        
         configfile = self.mshfile.with_suffix(".json")
         # load mesh metadata if available
         if mshfile is not None and configfile.exists():
@@ -159,7 +159,7 @@ class Mesh:
         best_q = max(r[1] for r in results)
         chosen = max(results, key=lambda r: r[1])
         d = chosen[0]
-        print(f"Selected d={d:.6g}: post-symmetry qmin={chosen[1]:.6g}, qmean={chosen[2]:.6g}; best qmin={best_q:.6g}")
+        #print(f"Selected d={d:.6g}: post-symmetry qmin={chosen[1]:.6g}, qmean={chosen[2]:.6g}; best qmin={best_q:.6g}")
         return d
 
     def generate(self, show=False, save_config=True, probe=False):
@@ -472,7 +472,7 @@ class Mesh:
             post_qualities = {name: _surface_quality(surface) for name, surface in quadrants.items()}
             qmin = min(q[0] for q in post_qualities.values())
             qmean = min(q[1] for q in post_qualities.values())
-            print(f"d={d:.6g}: qmin={qmin:.6g}, qmean={qmean:.6g}")
+            #print(f"d={d:.6g}: qmin={qmin:.6g}, qmean={qmean:.6g}")
             gmsh.finalize()
             return qmin, qmean
 

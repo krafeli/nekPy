@@ -1,4 +1,4 @@
-import sys, subprocess, functools, json, shutil
+import sys, subprocess, functools, json, shutil, os
 import numpy as np
 from pathlib import Path
 
@@ -15,7 +15,7 @@ def run_command_(cmd, dir, verbose=True, input=None):
     except:
         return
 
-def run_command(cmd, dir, verbose=True, input=None):
+def run_command(cmd, dir, verbose=True, input=None, logfile=None):
 
     process = subprocess.Popen(
         cmd,
@@ -34,10 +34,16 @@ def run_command(cmd, dir, verbose=True, input=None):
         process.stdin.write(input)
         process.stdin.close()
 
-    for line in process.stdout:
-        output.append(line)
-        if verbose:
-            print(line, end="", flush=True)
+    with open(logfile, "a") if logfile else open(os.devnull, "w") as log:
+        for line in process.stdout:
+            output.append(line)
+
+            if verbose:
+                print(line, end="", flush=True)
+
+            if logfile:
+                log.write(line)
+                log.flush()
 
     process.wait()
 
