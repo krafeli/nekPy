@@ -238,6 +238,7 @@ class BoundaryCondition:
 
                 ax.plot(u_blade_uk, y_blade_k, label=fr"Blade profile, $x/L={loc:.3f}$", color="blue")
                 ax.axhline(self.d99k, label=fr"$d_{{99}}={self.d99k:.3f}$, $k/d_{{99}}={1./self.d99k:.3f}$", color="blue", linestyle="--")
+                ax.axhline(1, color='silver', ls=':', label="y=k")
                 ax.set_xlabel(r"$u/u_k$")
 
                 ax.set_ylabel(r"$y/k$")

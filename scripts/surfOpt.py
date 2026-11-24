@@ -11,12 +11,15 @@ from nekPy.optimization import Optimization
 from nekPy.optimization.objectives import misfit
 
 
-config  = Path("/home/felix.kranz/thermoSurf/3d/opt/config")
-outbase = Path("/home/felix.kranz/thermoSurf/3d/opt/out")
-blfile  = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Re1e6.pkl")
-obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek900_xc005.f00001")
+#config  = Path("/home/felix.kranz/thermoSurf/3d/opt/config")
+#outbase = Path("/home/felix.kranz/thermoSurf/3d/opt/out")
+#blfile  = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Re1e6.pkl")
+#obsfile = Path("/home/felix.kranz/thermoSurf/3d/opt/data/Rek900_xc005.f00001")
 
-nodes = 2
+config  = Path("/scratch/projects/hbi00065/3d/DU95W180/opt/config")
+outbase = Path("/scratch/projects/hbi00065/3d/DU95W180/opt/out")
+blfile  = Path("/scratch/projects/hbi00065/3d/DU95W180/opt/data/Re1e6.pkl")
+obsfile = Path("/scratch/projects/hbi00065/3d/DU95W180/opt/data/Rek900_xc005.f00001")
 
 defaults = {'Rek': 900, 'xc': 0.05, 'eta': 1.0}
 
@@ -61,9 +64,9 @@ def objective(x, opt):
     pre.generate_mesh(k=1., eta=eta, 
                       Lx=75., Ly=10., Lz=20., Lin=15.,
                       size_k = 0.075 + (eta / 0.5) * 0.025,
-                      size_x = 1.00,
+                      size_x = 1.10,
                       size_y = 1.00,
-                      size_z = 0.65,
+                      size_z = 0.75,
                       size_yk= 0.15, 
                       )
     print(F"Computing connectivity map...")

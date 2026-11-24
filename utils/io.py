@@ -76,25 +76,29 @@ def read_h5(path):
         else:
             return {k: f[k][()] for k in keys}
 
-def read_probes(dir, probesfile='probes.dat', xyzfile='xyz.dat', out=None):
+def read_probes(dir, probesfile='probes.dat', xyzfile='xyz.dat', out=None, dtype=np.float32):
+    from itertools import islice
+
     dir = Path(dir)
 
     probesfile = dir / probesfile
     xyzfile = dir / xyzfile
+
     if out is None: out = dir / 'probes.pkl'
 
-    dat = np.loadtxt(probesfile, dtype=np.float64)
-    xyz = np.loadtxt(xyzfile, dtype=np.float64, skiprows=1, usecols=(0, 1, 2))
+    # Load coords
+    xyz = np.loadtxt(xyzfile, dtype=dtype, skiprows=1, usecols=(0, 1, 2))
+    n = xyz.shape[0]
 
-    n, m, step, _ = dat[0].astype(int)
+    with open(probesfile) as f: 
+        headers = np.array([np.fromstring(line, sep=' ', dtype=dtype) for line in islice(f, 0, None, n+1)])
 
-    block_len = n + 1
+    m = int(headers[0, 1])
+    t = headers[:, -1]
 
-    t = dat[::block_len, -1]
-
-    dat_blocks = dat.reshape(dat.shape[0] // block_len, block_len, dat.shape[1])
+    dat = np.loadtxt(probesfile, dtype=dtype, usecols=tuple(range(m)))
+    dat_blocks = dat.reshape(dat.shape[0] // (n+1), n+1, dat.shape[1])
     dat_blocks = dat_blocks[:, 1:, :]
 
     res = {'t': t, 'xyz': xyz, 'probes': dat_blocks}
-
     write_pkl(res, out)
