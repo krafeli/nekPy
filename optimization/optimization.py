@@ -8,7 +8,7 @@ from skopt.callbacks import CheckpointSaver
 
 from nekPy.utils.io import write_json, write_pkl
 from nekPy.utils.bash import mkdir
-from nekPy.optimization.callbacks import ExpectedMinimumStopper
+from nekPy.optimization.callbacks import ExpectedMinimumStopper, print_expected_optimum
 
 
 
@@ -150,8 +150,11 @@ class Optimization():
 
         if neval < nstarts: raise ValueError(f"neval ({neval}) must be >= nstarts ({nstarts}).")
 
-        callbacks = [CheckpointSaver(self.outdir / "checkpoint.pkl", store_objective=False),
-                     ExpectedMinimumStopper(rel_tol=tol, save=self.outdir, patience=patience)]
+        callbacks =  [
+            CheckpointSaver(self.outdir / "checkpoint.pkl", store_objective=False),
+            print_expected_optimum,
+            ExpectedMinimumStopper(rel_tol=tol, save=self.outdir, patience=patience)
+                     ]
 
         result = gp_minimize(
             self._objective,

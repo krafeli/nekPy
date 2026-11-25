@@ -60,3 +60,17 @@ class ExpectedMinimumStopper(EarlyStopper):
 
         return convergence
 
+
+def print_expected_optimum(res): 
+    iteration = len(res.func_vals)
+    best_index = res.func_vals.argmin()
+    
+    if not res.models: return
+    x_pred, y_pred = expected_minimum(res)
+    print("=" * 50)
+    print(f"\nIteration: {iteration}")
+    print(f"Best observed parameters: {res.x_iters[best_index]}")
+    print(f"Best observed objective:  {res.func_vals[best_index]}")
+    print(f"GP predicted minimum: {y_pred}")
+    print(f"GP predicted parameters: {x_pred}")
+    print("=" * 50)

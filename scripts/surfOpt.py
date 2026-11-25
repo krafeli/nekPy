@@ -101,8 +101,12 @@ def objective(x, opt):
 
     # cleanup
     run_command('rm -rf obj/ build.log *.msh run.sh makenek.log makefile done.flag *loc30.f*', outit)
-
-    print(f"Obtained function value: J({params})={J}\n")
+    #run_command('mkdir configs; mv *.json configs ; mv *.txt configs', outit)
+    #run_command('mkdir plots; mv *.pdf plots; mv *.png plots')
+    #run_command('mkdir logs; mv *log* logs', outit)
+    
+    
+    print(f"\nObtained function value: J({params})={J}")
     return J
 
 opt.set_objective(objective)
